@@ -37,7 +37,82 @@ class CreateCinemaSchema extends Migration
      */
     public function up()
     {
-        throw new \Exception('implement in coding task 4, you can ignore this exception if you are just running the initial migrations.');
+        Schema::create('movies', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('name');
+            $table->timestamps();
+        });
+
+        Schema::create('movie_prices', function (Blueprint $table) {
+            $table->increments('id');
+            $table->unsignedInteger('movie_id')->index();
+            $table->unsignedBigInteger('price_in_cents');
+            $table->enum('seat_type', ['vip', 'couple', 'super_vip', 'base'])->default('base');
+            $table->timestamps();
+
+            $table->foreign('movie_id')
+                ->references('id')
+                ->on('movies')
+                ->onDelete('restrict');
+        });
+
+        Schema::create('cinema_halls', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('name');
+        });
+
+        Schema::create('movie_sessions', function (Blueprint $table) {
+            $table->increments('id');
+            $table->unsignedInteger('movie_id')->index();
+            $table->unsignedInteger('cinema_hall_id')->index();
+            $table->timestamp('starts_at');
+            $table->timestamp('ends_at');
+            $table->unsignedInteger('seats_available'); //de normalization
+            $table->timestamps();
+
+            $table->foreign('movie_id')
+                ->references('id')
+                ->on('movies')
+                ->onDelete('restrict');
+
+            $table->foreign('cinema_hall_id')
+                ->references('id')
+                ->on('cinema_halls')
+                ->onDelete('restrict');
+        });
+
+        Schema::create('cinema_hall_seats', function (Blueprint $table) {
+            $table->increments('id');
+            $table->string('name');
+            $table->enum('type', ['vip', 'couple', 'super_vip', 'base'])->default('base');
+            $table->unsignedInteger('cinema_hall_id')->index();
+
+            $table->foreign('cinema_hall_id')
+                ->references('id')
+                ->on('cinema_halls')
+                ->onDelete('restrict');
+        });
+
+        Schema::create('bookings', function (Blueprint $table) {
+            $table->unsignedInteger('movie_session_id');
+            $table->unsignedInteger('movie_price_id');
+            $table->unsignedInteger('cinema_hall_seat_id');
+
+            $table->foreign('movie_session_id')
+                ->references('id')
+                ->on('movie_sessions')
+                ->onDelete('restrict');
+
+            $table->foreign('movie_price_id')
+                ->references('id')
+                ->on('movie_prices')
+                ->onDelete('restrict');
+
+            $table->foreign('cinema_hall_seat_id')
+                ->references('id')
+                ->on('cinema_hall_seats')
+                ->onDelete('restrict');
+        });
     }
 
     /**
