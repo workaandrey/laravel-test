@@ -4,6 +4,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\MenuItem;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Routing\Controller as BaseController;
 
 class MenuController extends BaseController
@@ -94,6 +95,30 @@ class MenuController extends BaseController
      */
 
     public function getMenuItems() {
-        throw new \Exception('implement in coding task 3');
+        $menuItems = MenuItem::query()
+            ->orderBy('parent_id')
+            ->get();
+
+        $buildTree = function (Collection $elements, $parentId = 0) use (&$buildTree) {
+            $branch = array();
+
+            foreach ($elements as $element) {
+                if ($element['parent_id'] == $parentId) {
+                    $children = $buildTree($elements, $element['id']);
+
+                    if ($children) {
+                        $element['children'] = $children;
+                    }
+
+                    $branch[] = $element;
+                }
+            }
+
+            return $branch;
+        };
+
+        $tree = $buildTree($menuItems);
+
+        return response()->json($tree);
     }
 }
